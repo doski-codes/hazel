@@ -459,15 +459,15 @@ if prompt := st.chat_input("Enter your query:"):
         response, tools = parse_run(run)
 
         if tools:
-            tool_text = "The following tools and inputs were used\n"
+            tool_text = "The following tools and inputs were used \n"
 
             for tool in tools:
-                tool_text += f"Tool: {tool.get('tool')}\n"
-                tool_text += "Inputs:\n"
-                tool_text += f"\tQuery: {tool.get('query')}\n"
+                tool_text += f"Tool: {tool.get('tool')} \n"
+                tool_text += "Inputs: \n"
+                tool_text += f"\t Query: {tool.get('query')} \n"
 
                 if tool.get('tool') == "document_tool":
-                    tool_text += f"\tMetadata: {tool.get('metadata')}\n"
+                    tool_text += f"\t Metadata: {tool.get('metadata')} \n"
 
             with st.chat_message("assistant"):
                 message_placeholder = st.empty()
