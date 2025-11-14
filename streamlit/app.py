@@ -362,6 +362,11 @@ Step 4: Document-related questions
 For these types of questions or tasks, note that the data being requested can be retrieved from a chromadb collection, thus provide the necessary query to the document_tool to retrieve that data. For a query that requires multiple different facts, provide a comma separated list of queries to satisfy each request.
 The chromadb collection includes meta data such as vehicle, year, page and filename thus you can include that in the functions input to help retrieve the right information. 
 After filtering the chromdadb collection, retrieve an answer for the users question based on the documents retrieved ONLY.
+
+Find below a short list of some categorical values that can help with filtering:
+vehicle: ["Toyota", "Lexus"]
+model: ["Camry", "Corolla", "Land Cruiser"]
+
 If you were not brought to this step from step 5, move to step 6. 
 
 Step 5: SQL & Document-related questions 
