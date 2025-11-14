@@ -10,7 +10,7 @@ from openai import OpenAI
 import streamlit as st
 
 
-def document_tool(query_keywords, vehicle, year):
+def document_tool(query_keywords):
     client = chromadb.HttpClient(
         host=os.getenv("CHROMA_HOST"), 
         port=os.getenv("CHROMA_PORT")
@@ -18,40 +18,10 @@ def document_tool(query_keywords, vehicle, year):
     collection = client.get_collection(
         name="vehicle-docs"
     )
-    
-    metadata = {}
 
-    if vehicle:
-        metadata["vehicle"] = vehicle
-
-    if year:
-        metadata["year"] = year
-
-    if metadata:
-        if metadata.get("vehicle") and metadata.get("year"):
-            result = collection.query(
-                query_texts=query_keywords,
-                where={
-                    "$and": [
-                        {"vehicle": vehicle},
-                        {"year": year}
-                    ]
-                }
-            )
-        elif metadata.get("vehicle"):
-            result = collection.query(
-                query_texts=query_keywords,
-                where={"vehicle": vehicle}
-            )
-        elif metadata.get("year"):
-            result = collection.query(
-                query_texts=query_keywords,
-                where={"year": year}
-            )
-    else:
-        result = collection.query(
-            query_texts=query_keywords
-        )
+    result = collection.query(
+        query_texts=query_keywords
+    )
 
     files = ", ".join(
         set(
@@ -213,9 +183,7 @@ def parse_run(run):
                 tool_outputs.append({
                     "tool_call_id": tool.id,
                     "output": document_tool(
-                        json.loads(tool.function.arguments).get("query"),
-                        json.loads(tool.function.arguments).get("vehicle"),
-                        json.loads(tool.function.arguments).get("year")
+                        json.loads(tool.function.arguments).get("query")
                     )
                 })
                 tools.append({
@@ -277,21 +245,8 @@ TOOLS = [
                         "description": """
                         The query to use to extract data from a chromadb collection
                         """
-                    },
-                    "vehicle": {
-                        "type": "string",
-                        "description": """
-                        The vehicle stated in the users query if any
-                        """
-                    },
-                    "year": {
-                        "type": "number",
-                        "description": """
-                        The specific year the user is requesting information about
-                        """
                     }
-                },
-                "required": ["query"]
+                }
             }
         }
     },
@@ -359,13 +314,8 @@ NOTE THAT YOU ARE REQUIRED TO USE THE EXACT TABLES AND COLUMN NAMES TO BUILD AN 
 If you were not brought to this step from step 5, move to step 6. 
 
 Step 4: Document-related questions 
-For these types of questions or tasks, note that the data being requested can be retrieved from a chromadb collection, thus provide the necessary query to the document_tool to retrieve that data. For a query that requires multiple different facts, provide a comma separated list of queries to satisfy each request.
-The chromadb collection includes meta data such as vehicle, year, page and filename thus you can include that in the functions input to help retrieve the right information. 
+For these types of questions or tasks, note that the data being requested can be retrieved from a chromadb collection, thus provide the necessary keywords to the document_tool to retrieve that data. For a query that requires multiple different facts, provide a comma separated list of keywords to satisfy each request.
 After filtering the chromdadb collection, retrieve an answer for the users question based on the documents retrieved ONLY.
-
-Find below a short list of some categorical values that can help with filtering:
-vehicle: ["Toyota", "Lexus"]
-model: ["Camry", "Corolla", "Land Cruiser"]
 
 If you were not brought to this step from step 5, move to step 6. 
 
@@ -413,7 +363,7 @@ assistant = client.beta.assistants.create(
     name="Customer Service Assitant",
     instructions=INSTRUCTION,
     model="gpt-4o-mini",
-    temperature=0.6
+    temperature=0.4
 )
 
 thread = client.beta.threads.create()
@@ -471,9 +421,6 @@ if prompt := st.chat_input("Enter your query:"):
                 tool_text += "Inputs: \n"
                 tool_text += f"\t Query: {tool.get('query')} \n"
 
-                if tool.get('tool') == "document_tool":
-                    tool_text += f"\t Metadata: {tool.get('metadata')} \n"
-
             with st.chat_message("assistant"):
                 message_placeholder = st.empty()
 
@@ -492,9 +439,6 @@ if prompt := st.chat_input("Enter your query:"):
 
         st.session_state.messages.append({"role": "assistant", "content": response})
     except Exception as e:
-        with st.chat_message("assistant"):
-            st.write(e)
-
         client.beta.threads.messages.delete(
             message_id=message.id,
             thread_id=thread.id
