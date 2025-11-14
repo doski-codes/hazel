@@ -42,7 +42,6 @@ for pdf_file in docs_path.glob("*.pdf"):
     modified_time = datetime.datetime.fromtimestamp(pdf_file.stat().st_mtime)
 
     reader = PdfReader(pdf_file)
-    # text = "\n".join([page.extract_text() or "" for page in reader.pages])
 
     for page in reader.pages:
         if not page.extract_text().strip():

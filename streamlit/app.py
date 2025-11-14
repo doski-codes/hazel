@@ -197,14 +197,14 @@ def parse_run(run):
         for tool in run.required_action.submit_tool_outputs.tool_calls:
             if tool.function.name == "sql_tool":
                 tool_outputs.append({
-                    "tool_call_id": tool.id,
+                    "tool": tool.function.name,
                     "output": sql_tool(
                         json.loads(tool.function.arguments).get("query")
                     )
                 })
             elif tool.function.name == "document_tool":
                 tool_outputs.append({
-                    "tool_call_id": tool.id,
+                    "tool": tool.function.name,
                     "output": document_tool(
                         json.loads(tool.function.arguments).get("query"),
                         json.loads(tool.function.arguments).get("vehicle"),
@@ -227,7 +227,7 @@ def parse_run(run):
 
     response = message_results.data[0].content[0].text.value
 
-    return response
+    return response, tool_outputs
 
 
 TOOLS = [
@@ -441,7 +441,12 @@ if prompt := st.chat_input("Enter your query:"):
     )
 
     try:
-        response = parse_run(run)
+        response, tools = parse_run(run)
+
+        with st.chat_message("assistant"):
+            st.write(f"The following tools were used: {json.dumps(tools)}")
+
+        st.session_state.messages.append({"role": "assistant", "content": json.dumps(tools)})
 
         with st.chat_message("assistant"):
             st.write(response)
