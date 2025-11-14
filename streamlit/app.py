@@ -1,5 +1,7 @@
+import re
 import os
 import json
+import time
 
 import psycopg2
 import chromadb
@@ -189,6 +191,7 @@ def get_dim_categories():
     return category_map
 
 def parse_run(run):
+    tools = []
     if run.status == "completed":
         pass
     elif run.status == "requires_action":
@@ -197,19 +200,31 @@ def parse_run(run):
         for tool in run.required_action.submit_tool_outputs.tool_calls:
             if tool.function.name == "sql_tool":
                 tool_outputs.append({
-                    "tool": tool.function.name,
+                    "tool_call_id": tool.id,
                     "output": sql_tool(
                         json.loads(tool.function.arguments).get("query")
                     )
                 })
+                tools.append({
+                    "tool": tool.function.name,
+                    "query": json.loads(tool.function.arguments).get("query")
+                })
             elif tool.function.name == "document_tool":
                 tool_outputs.append({
-                    "tool": tool.function.name,
+                    "tool_call_id": tool.id,
                     "output": document_tool(
                         json.loads(tool.function.arguments).get("query"),
                         json.loads(tool.function.arguments).get("vehicle"),
                         json.loads(tool.function.arguments).get("year")
                     )
+                })
+                tools.append({
+                    "tool": tool.function.name,
+                    "query": json.loads(tool.function.arguments).get("query"),
+                    "metadata": {
+                        "vehicle": json.loads(tool.function.arguments).get("vehicle"),
+                        "year": json.loads(tool.function.arguments).get("year")
+                    }
                 })
 
         try:
@@ -227,7 +242,7 @@ def parse_run(run):
 
     response = message_results.data[0].content[0].text.value
 
-    return response, tool_outputs
+    return response, tools
 
 
 TOOLS = [
@@ -410,7 +425,7 @@ run = client.beta.threads.runs.create_and_poll(
     tools=TOOLS
 )
 
-convo_start = parse_run(run)
+convo_start = parse_run(run)[0]
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -443,23 +458,45 @@ if prompt := st.chat_input("Enter your query:"):
     try:
         response, tools = parse_run(run)
 
-        with st.chat_message("assistant"):
-            st.write(f"The following tools were used: {json.dumps(tools)}")
+        if tools:
+            tool_text = "The following tools and inputs were used\n"
 
-        st.session_state.messages.append({"role": "assistant", "content": json.dumps(tools)})
+            for tool in tools:
+                tool_text += f"Tool: {tool.get('tool')}\n"
+                tool_text += "Inputs:\n"
+                tool_text += f"\tQuery: {tool.get('query')}\n"
+
+                if tool.get('tool') == "document_tool":
+                    tool_text += f"\tMetadata: {tool.get('metadata')}\n"
+
+            with st.chat_message("assistant"):
+                message_placeholder = st.empty()
+
+                full_response = ""
+
+                for chunk in re.split(r'(\s+)', tool_text):
+                    full_response += chunk + " "
+                    time.sleep(0.01)
+
+                    message_placeholder.markdown(full_response + "| ")
+
+            st.session_state.messages.append({"role": "assistant", "content": tool_text})
 
         with st.chat_message("assistant"):
             st.write(response)
 
         st.session_state.messages.append({"role": "assistant", "content": response})
-    except:
+    except Exception as e:
+        with st.chat_message("assistant"):
+            st.write(e)
+
         client.beta.threads.messages.delete(
             message_id=message.id,
             thread_id=thread.id
         )
 
         with st.chat_message("assistant"):
-            st.write("There waas an error while processing your request. Please try again")
+            st.write("There was an error while processing your request. Please try again")
 
         st.session_state.messages.append({"role": "assistant", "content": "There waas an error while processing your request. Please try again"}) 
 
