@@ -1,0 +1,72 @@
+services:
+  postgresql_db:
+    image: postgres:17-bookworm
+    restart: always
+    env_file:
+      - hazel.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - hazel_net
+
+  chromadb_init:
+    build: 
+      context: .
+      dockerfile: chroma/Dockerfile
+    volumes:
+      - ./docs:/app/docs
+      - ./chroma:/data
+      - ./chroma/init_chroma.py:/app/init_chroma.py
+    working_dir: /app
+    command: ["python", "init_chroma.py"]
+    networks:
+      - hazel_net
+    depends_on:
+      chromadb_server:
+        condition: service_healthy
+    restart: "no"
+    env_file:
+      - hazel.env
+      
+  chromadb_server:
+    image: chromadb/chroma
+    restart: on-failure
+    volumes:
+      - ./chroma:/data
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:8000/api/v2/healthcheck | grep -q '\"is_executor_ready\"[[:space:]]*:[[:space:]]*true' && echo 0 || echo 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - hazel_net
+
+  streamlit_app:
+    build: 
+      context: .
+      dockerfile: streamlit/Dockerfile
+    volumes:
+      - ./streamlit:/app
+    ports:
+      - "8501:8501"
+    depends_on:
+      chromadb_server:
+        condition: service_healthy
+      postgresql_db:
+        condition: service_started
+    env_file:
+      - hazel.env
+    networks:
+      - hazel_net
+
+volumes:
+  postgres_data:
+  chroma_data:
+
+networks:
+  hazel_net:

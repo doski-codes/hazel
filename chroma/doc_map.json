@@ -1,0 +1,47 @@
+[
+    {
+        "file": "Contract_Lexus_2023.pdf",
+        "vehicle": "Lexus",
+        "year": 2023,
+        "type": "Contract"
+    },
+    {
+        "file": "Contract_Toyota_2023.pdf",
+        "vehicle": "Toyota",
+        "year": 2023,
+        "type": "Contract"
+    },
+    {
+        "file": "Warranty_Policy_Appendix.pdf",
+        "vehicle": "Lexus",
+        "type": "Warranty"
+    },
+    {
+        "file": "Owners_Manual_Toyota_Camry_2025.pdf",
+        "vehicle": "Toyota",
+        "type": "Owners Manual",
+        "year": 2025,
+        "model": "Camry"
+    },
+    {
+        "file": "Owners_Manual_Toyota_Corolla_2012.pdf",
+        "vehicle": "Toyota",
+        "type": "Owners Manual",
+        "year": 2012,
+        "model": "Corolla"
+    },
+    {
+        "file": "Owners_Manual_Toyota_Corolla_2017.pdf",
+        "vehicle": "Toyota",
+        "type": "Owners Manual",
+        "year": 2017,
+        "model": "Corolla"
+    },
+    {
+        "file": "Owners_Manual_Toyota_Camry_2025.pdf",
+        "vehicle": "Toyota",
+        "type": "Owners Manual",
+        "year": 2025,
+        "model": "Camry"
+    }
+]

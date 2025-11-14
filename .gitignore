@@ -1,0 +1,6 @@
+.DS_Store
+*.sqlite3
+hazel.env
+*.bin
+docs/Owners_Manual_Toyota_Camry_2025.pdf
+docs/Owners_Manual_Toyota_Land_Cruiser_150_2022.pdf
