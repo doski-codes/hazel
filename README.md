@@ -8,7 +8,7 @@
 ## Architecture
 **Project Architecture**
 
-![Architecture Diagram](Hazel Architecture.png)
+<img src="Hazel%20Architecture.png" alt="Hazel Architecture" width="400" height="300">
 
 ## Installation
 **To create this project locally** 
